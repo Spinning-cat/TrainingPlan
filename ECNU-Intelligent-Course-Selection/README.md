@@ -474,9 +474,13 @@ CREATE TABLE succeed
 ## 数据插入
 
 使用 Python 将.csv 文件中的数据插入数据库中，之后不再使用.csv 文件中的内容
+
 自行查看python文件内容。将mysql-connector库换成了pymysql
+
 运行.py文件之前，先添加python模块，版本选择python 3.10
+
 另外，运行前首先要用mysql（自行下载配置）创建数据库`intelligent-course-system`
+
 *ps:* 由于创建的表格中标明了`NOT NULL`，但实际上的.csv表格中有空格，所以会有插入失败的数据，不必担心
 
 
