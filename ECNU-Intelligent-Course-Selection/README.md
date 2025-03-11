@@ -422,35 +422,31 @@ A：在对象中存放边，提高聚合度
 
 ### 实现思路
 
-根据传入的数据设置`CourseTableVo`​，使课程无法落在该处
+根据传入的数据设置`CourseTableVo`，使课程无法落在该处
 
 # 数据库部分
 
 ## 建表语句
 
+由于不想考虑教师的不同和班级不同给培养计划生成带来的影响，删除teacher,course_sp_id和limits属性，则mysql语句更改如下：
 ```SQL
 CREATE TABLE course
 (
     id              INT PRIMARY KEY AUTO_INCREMENT COMMENT '编号',
     course_basic_id VARCHAR(20) NOT NULL COMMENT '课程基础序号',
-    course_sp_id    VARCHAR(5)  NOT NULL COMMENT '课程班级序号',
     course_name     VARCHAR(20) NOT NULL COMMENT '课程名称',
-    teacher         VARCHAR(20) NOT NULL COMMENT '教师',
+    credit          DOUBLE      NOT NULL COMMENT '学分',
+    category        VARCHAR(15) NOT NULL COMMENT '课程类别',
     department      VARCHAR(20) NOT NULL COMMENT '开设院系',
     semester        VARCHAR(8)  NOT NULL COMMENT '学期',
-    category        VARCHAR(15) NOT NULL COMMENT '课程类别',
-    credit          DOUBLE      NOT NULL COMMENT '学分',
     beg_week        INT         NOT NULL COMMENT '开始周数',
-    last_week       INT         NOT NULL COMMENT '持续周数',
-    limits          INT         NOT NULL COMMENT '选课人数上限'
-)
-    COMMENT '课程';
+    last_week       INT         NOT NULL COMMENT '持续周数'
+) COMMENT '课程';
 
 CREATE TABLE course_period
 (
     id              INT PRIMARY KEY AUTO_INCREMENT COMMENT '编号',
     course_basic_id VARCHAR(20) NOT NULL COMMENT '课程基础序号',
-    course_sp_id    VARCHAR(5)  NOT NULL COMMENT '课程班级序号',
     day             VARCHAR(5)  NOT NULL COMMENT '上课日期',
     beg             INT         NOT NULL COMMENT '开始节数',
     last            INT         NOT NULL COMMENT '持续节数'
@@ -474,150 +470,15 @@ CREATE TABLE succeed
     COMMENT '后继课程';
 ```
 
+
 ## 数据插入
 
 使用 Python 将.csv 文件中的数据插入数据库中，之后不再使用.csv 文件中的内容
+自行查看python文件内容。将mysql-connector库换成了pymysql
+运行.py文件之前，先添加python模块，版本选择python 3.10
+另外，运行前首先要用mysql（自行下载配置）创建数据库`intelligent-course-system`
+*ps:* 由于创建的表格中标明了`NOT NULL`，但实际上的.csv表格中有空格，所以会有插入失败的数据，不必担心
 
-```Python
-import csv
-import sqlite3
-import mysql.connector
-
-# 数据库连接信息
-db_config = {
-    'host': '127.0.0.1',
-    'port': 3306,
-    'user': 'root',
-    'password': '123456',
-    'database': 'intelligent-course-system'
-}
-
-# 定义 CSV 文件路径
-courses_csv_file_path = "courses.csv"
-course_period_csv_file_path = "course_period.csv"
-prereq_csv_file_path = "prereq.csv"
-succeed_csv_file_path = "succeed.csv"
-
-
-# 连接 SQLite 数据库
-def create_connection(db_config):
-    try:
-        # 连接数据库
-        conn = mysql.connector.connect(**db_config)
-        return conn
-
-    except mysql.connector.Error as e:
-        print("Error connecting to MySQL database:", e)
-
-
-# 读取 CSV 文件并插入数据到数据库
-def read_courses(conn, csv_file):
-    try:
-        cursor = conn.cursor(prepared=True)
-        # 打开 CSV 文件
-        with open(csv_file, 'r', encoding='utf-8') as file:
-            reader = csv.reader(file)
-            headers = next(reader)  # 读取表头，跳过表头行
-            print("CSV Headers:", headers)
-            # 插入数据
-            for row in reader:
-                insert_sql = "INSERT INTO course (course_basic_id, course_sp_id, course_name, teacher, department, semester, category, credit, beg_week, last_week, limits) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-                cursor.execute(insert_sql, (
-                    row[0], row[1], row[2], row[3], row[4], row[5], row[6], float(row[7]), int(row[8]),
-                    int(row[9]), int(row[10])))
-        # 提交事务
-        conn.commit()
-        print("Data inserted successfully")
-    except sqlite3.Error as e:
-        print(e)
-    except Exception as ex:
-        print(f"Error reading CSV file: {ex}")
-
-
-def read_course_period(conn, csv_file):
-    try:
-        cursor = conn.cursor(prepared=True)
-        # 打开 CSV 文件
-        with open(csv_file, 'r', encoding='utf-8') as file:
-            reader = csv.reader(file)
-            headers = next(reader)  # 读取表头，跳过表头行
-            print("CSV Headers:", headers)
-            # 插入数据
-            for row in reader:
-                insert_sql = "INSERT INTO course_period (course_basic_id, course_sp_id, day, beg, last) VALUES(?, ?, ?, ?, ?) "
-                cursor.execute(insert_sql, (
-                    row[0], row[1], row[2], int(row[3]), int(row[4])))
-        # 提交事务
-        conn.commit()
-        print("Data inserted successfully")
-    except sqlite3.Error as e:
-        print(e)
-    except Exception as ex:
-        print(f"Error reading CSV file: {ex}")
-
-
-def read_prereq(conn, csv_file):
-    try:
-        cursor = conn.cursor(prepared=True)
-        # 打开 CSV 文件
-        with open(csv_file, 'r', encoding='utf-8') as file:
-            reader = csv.reader(file)
-            headers = next(reader)  # 读取表头，跳过表头行
-            print("CSV Headers:", headers)
-            # 插入数据
-            for row in reader:
-                insert_sql = "INSERT INTO prereq (course_basic_id, prereq_id) VALUES(?, ?) "
-                cursor.execute(insert_sql, (row[0], row[1]))
-        # 提交事务
-        conn.commit()
-        print("Data inserted successfully")
-    except sqlite3.Error as e:
-        print(e)
-    except Exception as ex:
-        print(f"Error reading CSV file: {ex}")
-
-
-def read_succeed(conn, csv_file):
-    try:
-        cursor = conn.cursor(prepared=True)
-        # 打开 CSV 文件
-        with open(csv_file, 'r', encoding='utf-8') as file:
-            reader = csv.reader(file)
-            headers = next(reader)  # 读取表头，跳过表头行
-            print("CSV Headers:", headers)
-            # 插入数据
-            for row in reader:
-                insert_sql = "INSERT INTO succeed (course_basic_id, succeed_course_basic_id) VALUES(?, ?) "
-                cursor.execute(insert_sql, (row[0], row[1]))
-        # 提交事务
-        conn.commit()
-        print("Data inserted successfully")
-    except sqlite3.Error as e:
-        print(e)
-    except Exception as ex:
-        print(f"Error reading CSV file: {ex}")
-
-
-# 主函数
-def main():
-    # 创建数据库连接
-    conn = create_connection(db_config)
-    if conn is not None:
-        # 插入数据
-        read_courses(conn, courses_csv_file_path)
-        read_course_period(conn, course_period_csv_file_path)
-        read_prereq(conn, prereq_csv_file_path)
-        read_succeed(conn, succeed_csv_file_path)
-        # 关闭数据库连接
-        conn.close()
-    else:
-        print("Error! Cannot connect to the database.")
-
-
-if __name__ == "__main__":
-    main()
-
-```
 
 # 前端部分
 
@@ -625,4 +486,3 @@ if __name__ == "__main__":
 
 详见[github.com/Zephyrtoria/Intelligent-Course-Selection-UI](https://github.com/Zephyrtoria/Intelligent-Course-Selection-UI)
 
-‍
