@@ -52,11 +52,11 @@ qt 6.8.2
 
 结合qt的最终效果展示：
 
-![Qt最终效果展示](../image/finalResult.png)
+![Qt最终效果展示](image/finalResult.png)
 
 semesterCourses.txt展示：
 
-![结果文件内容展示](../image/semesterCourses.png)
+![结果文件内容展示](image/semesterCourses.png)
 
 ---
 
