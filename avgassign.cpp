@@ -4,7 +4,6 @@
 #include <fstream>
 #include <sstream>
 #include <queue>
-#include <QQueue>
 unordered_map<string, vector<string>> graph;    // 课程依赖图
 unordered_map<string, int> indegree;           // 入度表
 unordered_map<string, Course> courses;         // 课程信息
@@ -89,8 +88,14 @@ void assignCourses(const vector<string>& sortedCourses, vector<double>creditDema
     unordered_map<string, int> assignedSemester;  // 存储已分配的课程
     vector<double> diffTypeCoursesCreditTotal(4, 0);     // 4种不同类型课程已修总学分
 
-    //预分配课程（体育、通选、毕业实习 & 设计）
-    vector<pair<int, string>> peCourses = { {0, "C09"}, {0, "C24"}, {1, "C10"}, {1, "C25"} ,{2, "C11"}, {2, "C26"} ,{3, "C12"}, {3, "C27"} ,{4, "C28"} ,{6, "C94"}, {7, "C95"}};
+    // 预分配课程（体育4、通选10、毕业实习8 & 设计10）
+    vector<pair<int, string>> peCourses = { {0, "C09"}, {0, "C24"},
+                                           {1, "C10"}, {1, "C25"} ,
+                                           {2, "C11"}, {2, "C26"} ,
+                                           {3, "C12"}, {3, "C27"} ,
+                                           {4, "C28"} ,
+                                           {6, "C94"},
+                                           {7, "C95"}};
 
     for (const auto& [sem, id] : peCourses) {  // 将已分配课程的学分加上
         semesters[sem].push_back(id);
@@ -133,7 +138,7 @@ void assignCourses(const vector<string>& sortedCourses, vector<double>creditDema
                 maxCredit = creditDemand[j];
 
                 if(j == 0){
-                    avgCredit = maxCredit = (creditDemand[j] - 20) / 4;
+                    avgCredit = maxCredit = (creditDemand[j] - 32) / 4;
                 } else if (j == 2){
                     if(i < 4){
                         maxCredit = avgCredit;
@@ -143,7 +148,7 @@ void assignCourses(const vector<string>& sortedCourses, vector<double>creditDema
                 }
                 /**
                                     *特殊设置原因
-                 *      j == 0 （公共基础+实践必修） 一般集中在前4个学期，-20减去了预分配的
+                 *      j == 0 （公共基础+实践必修） 一般集中在前4个学期，-32减去了预分配的
                  *      j ==  2（专业选修课） 一般集中在从第4个学期开始的4个学期（4-7）
                  */
 
