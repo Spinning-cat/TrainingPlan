@@ -133,26 +133,30 @@ void assignCourses(const vector<string>& sortedCourses, vector<double>creditDema
                 string id = diffTypeCourses[j][seq];
                 Course course = courses[id];
 
-                // 设置学期平均学分和学期最大学分
-                double avgCredit, maxCredit;
-                // 初始化
-                avgCredit = creditDemand[j] / 8;
-                maxCredit = creditDemand[j];
+                // 设置学期平均学分和学期最大学分（动态策略）
+                double avgCredit = creditDemand[j] / 8.0;
+                double maxCredit = creditDemand[j];
 
-                if(j == 0){
-                    avgCredit = maxCredit = (creditDemand[j] - 32) / 3;
-                } else if (j == 2){
-                    if(i < 4){
-                        maxCredit = avgCredit;
-                    }else{
-                        avgCredit = creditDemand[j] / 4;
+                if (j == 0) {
+                    // 公共基础课和实践必修课集中在前 3 学期
+                    double remainingCredit = creditDemand[j] - diffTypeCoursesCreditTotal[j];  // 减去预分配的课程学分
+                    double remainingSemesters = max(1, 3 - i);  // 安排到前3学期
+                    if (i < 3) {
+                        avgCredit = remainingCredit / remainingSemesters;
+                        maxCredit = avgCredit * 1.5;  // 可调范围
+                    } else {
+                        maxCredit = avgCredit = creditDemand[j] / 8;
                     }
                 }
-                /**
-                                    *特殊设置原因
-                 *      j == 0 （公共基础+实践必修） 一般集中在前3个学期，-32减去了预分配的
-                 *      j ==  2（专业选修课） 一般集中在从第4个学期开始的4个学期（4-7）
-                 */
+                else if (j == 2) {
+                    // 专业选修课集中在后 4 学期（4~7）
+                    if (i < 3) {
+                        maxCredit = avgCredit = creditDemand[j] / 8; // 第三学期也开设少量选修
+                    } else {
+                        avgCredit = creditDemand[j] / 4;    // 固定设置avgCredit，因为想要专业选修课能够
+                        maxCredit = creditDemand[j];
+                    }
+                }
 
                 double forCredit = diffTypeCoursesCredit[j][i] + course.credit;
 
