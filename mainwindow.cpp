@@ -3,6 +3,7 @@
 #include "avgassign.h"
 #include "Course.h"
 #include <vector>
+#include <QDebug>
 
 using namespace std;
 
@@ -11,6 +12,8 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    preassignedIDs = {"C09", "C10", "C11", "C12", "C24", "C25", "C26", "C27", "C28", "C94", "C95"};
+
     ui->gridLayout_5->setColumnStretch(0, 2);
     ui->gridLayout_5->setColumnStretch(1, 1);
 
@@ -36,6 +39,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->needCredit3->setValue(45);
     ui->needCredit2->setValue(23);
     ui->needCredit4->setValue(4);
+
+    qDebug() << "Default values:"
+             << ui->needCredit1->value()
+             << ui->needCredit2->value()
+             << ui->needCredit3->value()
+             << ui->needCredit4->value();
+
 
     // 显示学分设为只读
     ui->credit1->setReadOnly(true);
@@ -135,6 +145,14 @@ void MainWindow::loadtxtIntoTable(const QString& filename)
 
         appendOneRow(CID, Cname, credit, hours, category, prereqList);
 
+        // 设置只读（如果是预分配课程）
+        if (preassignedIDs.contains(CID)) {
+            for (int col = 0; col < ui->coursesTable->columnCount(); ++col) {
+                QTableWidgetItem* item = ui->coursesTable->item(ui->coursesTable->rowCount() - 1, col);
+                if (item)
+                    item->setFlags(item->flags() & ~Qt::ItemIsEditable);
+            }
+        }
     }
 }
 
@@ -511,6 +529,12 @@ void MainWindow::on_deleteCourse_clicked()
     // 获取课程ID
     QString courseId = ui->coursesTable->item(row, 0)->text();
     courseIDs.remove(courseId);
+
+    // 判断要删除的课程是否为预分配课程
+    if (preassignedIDs.contains(courseId)) {
+        QMessageBox::information(this, "提示", "该课程为固定课程，无法删除。");
+        return;
+    }
 
     // 确认是否删除
     QMessageBox::StandardButton reply;

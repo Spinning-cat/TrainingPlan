@@ -32,6 +32,7 @@ private:
     QString filename = "/Users/cynthia/projects/QtProject/TrainingPlan/courses.txt";
     QString filepath = "/Users/cynthia/projects/QtProject/TrainingPlan/semesterCourses.txt";
     QSet<QString> courseIDs;
+    QSet<QString> preassignedIDs;  // 预设课程 ID
 
 public:
     void appendOneRow(QString CID, QString Cname, double credit, int hours, int category, QString prereq);
