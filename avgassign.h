@@ -4,11 +4,12 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <QWidget>
 #include "Course.h"
 using namespace std;
 
 void loadCourses(const string& filename);
-vector<string> TopologicalSort();
+vector<string> TopologicalSort(QWidget* parent = nullptr);
 void assignCourses(const vector<string>& sortedCourses, vector<double> creditDemand);
 
 #endif

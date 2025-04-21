@@ -270,7 +270,7 @@ void MainWindow::loadResultTxtIntoTable(const QString& filename)
 void MainWindow::getTrainingPlan()
 {
     loadCourses(getFilename().toStdString());
-    vector<string> top_courses = TopologicalSort();
+    vector<string> top_courses = TopologicalSort((static_cast<QWidget*>(this)));
 
     // 获取4类课程需求学分
     vector<double>creditDemand(4, 0);

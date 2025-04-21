@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <queue>
+#include <QMessageBox>
 unordered_map<string, vector<string>> graph;    // 课程依赖图
 unordered_map<string, int> indegree;           // 入度表
 unordered_map<string, Course> courses;         // 课程信息
@@ -37,7 +38,7 @@ void loadCourses(const string& filename) {
     file.close();
 }
 
-vector<string> TopologicalSort() {
+vector<string> TopologicalSort(QWidget* parent) {
     queue<string> q;
     vector<string> sortedCourses;
     unordered_map<string, int> indegreeCopy = indegree;
@@ -62,6 +63,7 @@ vector<string> TopologicalSort() {
 
     if (sortedCourses.size() != courses.size()) {
         cout << "存在循环依赖，无法拓扑排序! \n";
+        QMessageBox::critical(parent, "错误", "课程之间存在循环依赖，无法拓扑排序！");
         exit(EXIT_FAILURE);
     }
 
