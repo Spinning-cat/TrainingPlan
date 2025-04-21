@@ -140,7 +140,7 @@ void assignCourses(const vector<string>& sortedCourses, vector<double>creditDema
                 maxCredit = creditDemand[j];
 
                 if(j == 0){
-                    avgCredit = maxCredit = (creditDemand[j] - 32) / 4;
+                    avgCredit = maxCredit = (creditDemand[j] - 32) / 3;
                 } else if (j == 2){
                     if(i < 4){
                         maxCredit = avgCredit;
@@ -150,7 +150,7 @@ void assignCourses(const vector<string>& sortedCourses, vector<double>creditDema
                 }
                 /**
                                     *特殊设置原因
-                 *      j == 0 （公共基础+实践必修） 一般集中在前4个学期，-32减去了预分配的
+                 *      j == 0 （公共基础+实践必修） 一般集中在前3个学期，-32减去了预分配的
                  *      j ==  2（专业选修课） 一般集中在从第4个学期开始的4个学期（4-7）
                  */
 
