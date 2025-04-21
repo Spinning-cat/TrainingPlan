@@ -3,7 +3,6 @@
 #include "avgassign.h"
 #include "Course.h"
 #include <vector>
-#include <QDebug>
 
 using namespace std;
 
@@ -39,13 +38,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->needCredit3->setValue(45);
     ui->needCredit2->setValue(23);
     ui->needCredit4->setValue(4);
-
-    qDebug() << "Default values:"
-             << ui->needCredit1->value()
-             << ui->needCredit2->value()
-             << ui->needCredit3->value()
-             << ui->needCredit4->value();
-
 
     // 显示学分设为只读
     ui->credit1->setReadOnly(true);
