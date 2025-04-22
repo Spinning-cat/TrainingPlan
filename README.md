@@ -1,7 +1,7 @@
 # TrainingPlan
 数据结构大作业——培养编制计划
 
-环境：
+环境： \
 macOS Sequoia 15.3.2 \
 qt 6.8.2
 
@@ -94,27 +94,36 @@ semesterCourses.txt展示：
 1. **loadtxtIntoTable**
    在运行项目时，调用该函数，直接显示`courses.txt`到ui表格中。
    实现很简单，按行读取即可，和`loadCourses`函数相仿
+
 2. **appendOneRow**
    每读取一行，将各属性传入该函数，该函数将在表格最后添加一行，并设置单元格内容
+
 3. **getTrainingPlan**
    按顺序调用三个核心函数，并将从ui上获取的4类课程应修学分，将其传入`assignCourses`函数即可。
    另外，调用下一个函数，将`semesterCourses.txt`内容导在表格上即可
+
 4. **loadResultTxtIntoTable**
    将结果文件导入在ui上的结果表格
    - 要求前面 7 行为固定的行，即每学期的总学分、总学时和 5 类课程总学分
    - 后面的课程按照最多的那一学期的课程数来排，动态增加行数
    - 解析每学期的课程（格式：(ID)type Cname），并根据 type 设置不同的单元格颜色（1红 2黄 3蓝 4绿 5白）
    - 最后再输出 8 学期的 5 类课程总学分
+
 5. **on_searchCourse_clicked**
    获取ui传来的关键词，遍历表格匹配关键词，最后定位单元格并对单元格高亮显示
+
 6. **on_editCourse_clicked**
    “修改课程”被点击时，“确认修改”按钮才开启。同时不可更改的表格变为除了id都能更改的表格
+
 7. **on_confirmButton_clicked**
    “确认修改”被点击后，遍历表格所有行，并将单元格信息一一存储到`vector<Course> updatedCourses`
    将`updatedCourses`作为参数调用`updateCourseInFile`，使得可进行课程信息文件的修改
+
 8. **updateCourseInFile**
    打开结果文件`semesterCourses.txt`并清空其数据，并将新数据写进去
+
 9. **on_deleteCourse_clicked()**
     选中一行后才能进行删除。删除ui上的记录，并更新`courseIDs`（移除被删除的id），并传入这个id调用函数`updateCourseFile`
+
 10. **updateCourseFile**
     **删除后对.txt文件进行更新**。按行读取文件内容，匹配id，未匹配成功的写入`courses.txt`，反之，不写入（相当于删除）
