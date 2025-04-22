@@ -29,8 +29,8 @@ public:
 private:
     Ui::MainWindow *ui;
     void createTable();
-    QString filename = "/Users/cynthia/projects/QtProject/TrainingPlan/courses.txt";
-    QString filepath = "/Users/cynthia/projects/QtProject/TrainingPlan/semesterCourses.txt";
+    QString filename;
+    QString filepath;
     QSet<QString> courseIDs;
     QSet<QString> preassignedIDs;  // 预设课程 ID
 
@@ -43,6 +43,8 @@ public:
     void updateCourseFile(const QString &courseId);
     QString getFilename();
     QString getFilepath();
+    void setFilename(const QString& filename);
+    void setFilepath(const QString& filepath);
     bool isCIDexists(QString cid);
 private slots:
     void on_getTrainingPlan_clicked();
@@ -51,5 +53,6 @@ private slots:
     void on_editCourse_clicked();
     void on_confirmButton_clicked();
     void on_deleteCourse_clicked();
+    void on_showCourses_clicked();
 };
 #endif // MAINWINDOW_H

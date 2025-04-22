@@ -31,19 +31,19 @@ MainWindow::MainWindow(QWidget *parent)
     ui->coursesTable->horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
     ui->resultTable->horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
 
-    loadtxtIntoTable(getFilename());
-
     // 设置学分修读默认值
-    ui->needCredit1->setValue(98);
-    ui->needCredit3->setValue(45);
-    ui->needCredit2->setValue(23);
-    ui->needCredit4->setValue(4);
+    ui->needCredit1->setValue(70);
+    ui->needCredit2->setValue(45);
+    ui->needCredit3->setValue(23);
+    ui->needCredit4->setValue(28);
+    ui->needCredit5->setValue(4);
 
     // 显示学分设为只读
     ui->credit1->setReadOnly(true);
     ui->credit2->setReadOnly(true);
     ui->credit3->setReadOnly(true);
     ui->credit4->setReadOnly(true);
+    ui->credit5->setReadOnly(true);
 
     // 表格大小自适应内容
     ui->coursesTable->resizeColumnsToContents();
@@ -59,7 +59,6 @@ MainWindow::MainWindow(QWidget *parent)
     // 设置表格颜色交替显示
     ui->coursesTable->setAlternatingRowColors(true);
     ui->resultTable->setAlternatingRowColors(true);
-
 }
 
 MainWindow::~MainWindow()
@@ -74,10 +73,11 @@ void MainWindow::appendOneRow(QString CID, QString Cname, double credit, int hou
     ui->coursesTable->setRowCount(count + 1);
     QString category_str = "";
     switch (category) {
-    case 1: category_str = "公共基础课/实践必修课"; break;
+    case 1: category_str = "公共基础课"; break;
     case 2: category_str = "专业基础课"; break;
     case 3: category_str = "专业选修课"; break;
-    case 4: category_str = "实践选修课"; break;
+    case 4: category_str = "实践必修课"; break;
+    case 5: category_str = "实践选修课"; break;
     default:
         break;
     }
@@ -110,7 +110,8 @@ void MainWindow::loadtxtIntoTable(const QString& filename)
     QFile file(filename);
     if(!file.open(QIODevice::ReadOnly))
     {
-        QMessageBox::warning(nullptr, "错误", "无法打开文件");
+        qDebug() << "课程文件路径：" << filename;
+        QMessageBox::warning(nullptr, "错误", "无法打开课程文件");
         return;
     }
 
@@ -162,9 +163,9 @@ void MainWindow::loadResultTxtIntoTable(const QString& filename)
 
     QTextStream in(&file);
 
-    // 读取前四行：四类课程总学分
+    // 读取前5行：5类课程总学分
     QStringList totalCredits;
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
         if (!in.atEnd()) {
             totalCredits.append(in.readLine().trimmed());
         }
@@ -204,8 +205,8 @@ void MainWindow::loadResultTxtIntoTable(const QString& filename)
             continue;
         }
 
-        // 解析 4 类课程学分
-        if (semesterIndex >= 0 && typeCredits[semesterIndex].size() < 4) {
+        // 解析 5 类课程学分
+        if (semesterIndex >= 0 && typeCredits[semesterIndex].size() < 5) {
             typeCredits[semesterIndex].append(line);
             continue;
         }
@@ -219,7 +220,7 @@ void MainWindow::loadResultTxtIntoTable(const QString& filename)
     file.close();
 
     // 计算最大课程数量，确定表格行数，动态设置
-    int baseRows = 6; // 学分、学时和四类课程修读学分信息共占 6 行
+    int baseRows = 7; // 学分、学时和5类课程修读学分信息共占 7 行
     int maxCourses = 0;
     for (const auto& courseList : courses) {
         maxCourses = qMax(maxCourses, courseList.size());
@@ -238,7 +239,7 @@ void MainWindow::loadResultTxtIntoTable(const QString& filename)
 
     // 设置垂直表头
     ui->resultTable->verticalHeader()->setVisible(false);
-    QStringList headers = { "修读学分", "修读学时", "公共基础+实践必修课学分", "专业基础课学分", "专业选修课学分", "实践选修课学分" };
+    QStringList headers = { "修读学分", "修读学时", "公共基础课学分", "专业基础课学分", "专业选修课学分", "实践必修课学分", "实践选修课学分" };
 
     // 填充左侧表头
     for (int i = 0; i < headers.size(); i++) {
@@ -246,14 +247,14 @@ void MainWindow::loadResultTxtIntoTable(const QString& filename)
         ui->resultTable->setItem(i, 0, item);
     }
 
-    // 填充学分、学时、四类课程学分
+    // 填充学分、学时、5类课程学分
     for (int i = 0; i < semesterCredits.size(); i++) {
         ui->resultTable->setItem(0, i + 1, new QTableWidgetItem(semesterCredits[i]));
         ui->resultTable->setItem(1, i + 1, new QTableWidgetItem(semesterHours[i]));
         ui->resultTable->item(0, i + 1)->setTextAlignment(Qt::AlignCenter);
         ui->resultTable->item(1, i + 1)->setTextAlignment(Qt::AlignCenter);
 
-        for (int j = 0; j < 4; j++) {
+        for (int j = 0; j < 5; j++) {
             if (j < typeCredits[i].size()) {
                 ui->resultTable->setItem(j + 2, i + 1, new QTableWidgetItem(typeCredits[i][j]));
                 ui->resultTable->item(j + 2, i + 1)->setTextAlignment(Qt::AlignCenter);
@@ -264,16 +265,44 @@ void MainWindow::loadResultTxtIntoTable(const QString& filename)
     // 填充课程
     for (int i = 0; i < courses.size(); i++) {
         for (int j = 0; j < courses[i].size(); j++) {
-            ui->resultTable->setItem(baseRows + j, i + 1, new QTableWidgetItem(courses[i][j]));
+            QString rawCourse = courses[i][j];
+            QRegularExpression regex(R"(\(([^)]+)\)(\d)(.*))");  // 提取 (ID)type name 格式
+            QRegularExpressionMatch match = regex.match(rawCourse);
+
+            QString displayText = rawCourse;
+            int type = 0;
+
+            if (match.hasMatch()) {
+                QString id = match.captured(1);       // 课程ID
+                type = match.captured(2).toInt();     // 课程类型
+                QString name = match.captured(3);     // 课程名称
+                displayText = "(" + id + ")" + name;  // 去掉类型数字
+            }
+
+            QTableWidgetItem* item = new QTableWidgetItem(displayText);
+
+            // 设置背景色根据类型
+            switch (type) {
+            case 1: item->setBackground(QBrush(QColor(250, 128, 114))); break;
+            case 2: item->setBackground(QBrush(QColor(255, 246, 143))); break;
+            case 3: item->setBackground(QBrush(QColor(151, 255, 255))); break;
+            case 4: item->setBackground(QBrush(QColor(154, 255, 154))); break;
+            case 5: item->setBackground(QBrush(QColor(255, 255, 255))); break;
+            default: break;
+            }
+
+            item->setTextAlignment(Qt::AlignCenter);
+            ui->resultTable->setItem(baseRows + j, i + 1, item);
         }
     }
 
     // 更新 UI（插入总学分..）
-    if (totalCredits.size() >= 4) {
+    if (totalCredits.size() >= 5) {
         ui->credit1->setText(totalCredits[0]);
         ui->credit2->setText(totalCredits[1]);
         ui->credit3->setText(totalCredits[2]);
         ui->credit4->setText(totalCredits[3]);
+        ui->credit5->setText(totalCredits[4]);
     }
 }
 
@@ -282,13 +311,14 @@ void MainWindow::getTrainingPlan()
     loadCourses(getFilename().toStdString());
     vector<string> top_courses = TopologicalSort((static_cast<QWidget*>(this)));
 
-    // 获取4类课程需求学分
-    vector<double>creditDemand(4, 0);
+    // 获取5类课程需求学分
+    vector<double>creditDemand(5, 0);
     creditDemand[0] = stod(ui->needCredit1->text().toStdString());
     creditDemand[1] = stod(ui->needCredit2->text().toStdString());
     creditDemand[2] = stod(ui->needCredit3->text().toStdString());
     creditDemand[3] = stod(ui->needCredit4->text().toStdString());
-    assignCourses(top_courses, creditDemand);
+    creditDemand[4] = stod(ui->needCredit5->text().toStdString());
+    assignCourses(top_courses, creditDemand, this->filepath);
     loadResultTxtIntoTable(getFilepath());
 }
 
@@ -328,7 +358,7 @@ void MainWindow::updateCourseInFile(const vector<Course>& updatedCourses)
             .arg(QString::fromStdString(course.name))
             .arg(course.credit)
             .arg(course.hours)
-            .arg(course.priority)
+            .arg(course.type)
             .arg(QString::fromStdString(join(course.prerequisites, " ")));
     }
 
@@ -365,6 +395,10 @@ QString MainWindow::getFilepath()
 {
     return filepath;
 }
+
+void MainWindow::setFilename(const QString& filename) {this->filename = filename;}
+void MainWindow::setFilepath(const QString& filepath) {this->filepath = filepath;}
+
 
 // 判断cid是否出现过
 bool MainWindow::isCIDexists(QString cid)
@@ -466,10 +500,11 @@ void MainWindow::on_confirmButton_clicked()
 {
     vector<Course> updatedCourses;
     QMap<QString, int> courseTypeMap;
-    courseTypeMap["公共基础课/实践必修课"] = 1;
+    courseTypeMap["公共基础课"] = 1;
     courseTypeMap["专业基础课"] = 2;
     courseTypeMap["专业选修课"] = 3;
-    courseTypeMap["实践选修课"] = 4;
+    courseTypeMap["实践必修课"] = 4;
+    courseTypeMap["实践选修课"] = 5;
 
     for(int row = 0; row < ui->coursesTable->rowCount(); row++)
     {
@@ -480,10 +515,10 @@ void MainWindow::on_confirmButton_clicked()
         double credit = ui->coursesTable->item(row, 2)->text().toDouble();
         int hours = ui->coursesTable->item(row, 3)->text().toInt();
         QString category = ui->coursesTable->item(row, 4)->text();
-        int priority = 0;
+        int type = 0;
         if(courseTypeMap.contains(category))
         {
-            priority = courseTypeMap[category];
+            type = courseTypeMap[category];
         } else {
             QMessageBox::warning(this, "错误", "输入课程类型错误，修改失败！");
             return;
@@ -496,7 +531,7 @@ void MainWindow::on_confirmButton_clicked()
         course.name = Cname.toStdString();
         course.credit = credit;
         course.hours = hours;
-        course.priority = priority;
+        course.type = type;
         for(const auto&pre : prereqlist)
         {
             course.prerequisites.push_back(pre.toStdString());
@@ -580,5 +615,11 @@ void MainWindow::updateCourseFile(const QString &courseId)
     }
     file.close();
     QMessageBox::information(this, "成功", "删除课程成功");
+}
+
+
+void MainWindow::on_showCourses_clicked()
+{
+    loadtxtIntoTable(getFilename());
 }
 
