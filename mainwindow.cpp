@@ -465,7 +465,7 @@ void MainWindow::on_addCourse_clicked()
     QString Cname = QInputDialog::getText(this, "添加课程", "课程名称");
     double credit = QInputDialog::getDouble(this, "添加课程", "学分");
     int hours = QInputDialog::getInt(this, "添加课程", "总学时");
-    int category = QInputDialog::getInt(this, "添加课程", "课程类型（1:公共基础课/实践必修课 2:专业基础课 3:专业选修课） 4: 实践选修课");
+    int category = QInputDialog::getInt(this, "添加课程", "课程类型（1:公共基础课 2:专业基础课 3:专业选修课 4: 实践必修课 5: 实践选修课");
     QString prereq = QInputDialog::getText(this, "添加课程", "前置课程（用空格分隔）");
 
     appendOneRow(CID, Cname, credit, hours, category, prereq);
