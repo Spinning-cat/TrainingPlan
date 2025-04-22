@@ -5,6 +5,7 @@
 #include <sstream>
 #include <queue>
 #include <QMessageBox>
+#include <QFile>
 unordered_map<string, vector<string>> graph;    // 课程依赖图
 unordered_map<string, int> indegree;           // 入度表
 unordered_map<string, Course> courses;         // 课程信息
@@ -23,7 +24,7 @@ void loadCourses(const string& filename) {
         Course course;
         string prereq;
 
-        ss >> course.id >> course.name >> course.credit >> course.hours >> course.priority;
+        ss >> course.id >> course.name >> course.credit >> course.hours >> course.type;
         while (ss >> prereq) {
             course.prerequisites.push_back(prereq);
             graph[prereq].push_back(course.id);
@@ -62,7 +63,6 @@ vector<string> TopologicalSort(QWidget* parent) {
     }
 
     if (sortedCourses.size() != courses.size()) {
-        cout << "存在循环依赖，无法拓扑排序! \n";
         QMessageBox::critical(parent, "错误", "课程之间存在循环依赖，无法拓扑排序！");
         exit(EXIT_FAILURE);
     }
@@ -71,24 +71,25 @@ vector<string> TopologicalSort(QWidget* parent) {
 }
 
 // 课程分配到 8 个学期，保证专业选修课均匀分布
-void assignCourses(const vector<string>& sortedCourses, vector<double>creditDemand) {
+void assignCourses(const vector<string>& sortedCourses, vector<double>creditDemand, const QString& outPath, QWidget* parent) {
 
     vector<double> semesterCredit(8, 0);
     vector<int> semesterHours(8, 0);
-    vector<vector<double>> diffTypeCoursesCredit(4, vector<double>(8, 0)); // 4类课程在某个学期中的分布
+    vector<vector<double>> diffTypeCoursesCredit(5, vector<double>(8, 0)); // 4类课程在某个学期中的分布
     /**
-            0   公共基础课和实践必修课总学分
+            0   公共基础课和总学分
             1   专业基础课
             2   专业选修课
-            3   实践选修课
+            3 ` 实践必修课
+            4   实践选修课
      */
 
-    vector<vector<string>> diffTypeCourses(4, vector<string>());     // 4种不同课程类型中分别包含哪些课
+    vector<vector<string>> diffTypeCourses(5, vector<string>());     // 5种不同课程类型中分别包含哪些课
     vector<vector<string>> semesters(8);    // 记录某学期修的课程
 
 
     unordered_map<string, int> assignedSemester;  // 存储已分配的课程
-    vector<double> diffTypeCoursesCreditTotal(4, 0);     // 4种不同类型课程已修总学分
+    vector<double> diffTypeCoursesCreditTotal(5, 0);     // 5种不同类型课程已修总学分
 
     // 预分配课程（体育4、通选10、毕业实习8 & 设计10）
     vector<pair<int, string>> peCourses = { {0, "C09"}, {0, "C24"},
@@ -103,31 +104,34 @@ void assignCourses(const vector<string>& sortedCourses, vector<double>creditDema
         semesters[sem].push_back(id);
         semesterCredit[sem] += courses[id].credit;
         semesterHours[sem] += courses[id].hours;
-        diffTypeCoursesCredit[0][sem] += courses[id].credit;    // 都归属第一类
+        int t = (courses[id].type == 1) ? 0 : 3;
+        diffTypeCoursesCredit[t][sem] += courses[id].credit;    // 都归属第1/4类
+        diffTypeCoursesCreditTotal[t] += courses[id].credit; // 将预分配课程某学期的学分加到diffTypeCoursesCreditTotal（8学期）中
         assignedSemester[id] = sem;
     }
 
     for (const string& id : sortedCourses) {  // 将课程按类型分类，除去预分配课程，将课程按类划分进入diffTypeCourses
         if (assignedSemester.count(id) || id == "C06") continue; // 跳过已固定分配的课程
-        if (courses[id].priority == 1 ) {    // 特判形势与政策
+        if (courses[id].type == 1 ) {    // 特判形势与政策C06
             diffTypeCourses[0].push_back(id);
         }
-        else if (courses[id].priority == 2) {
+        else if (courses[id].type == 2) {
             diffTypeCourses[1].push_back(id);
         }
-        else if(courses[id].priority == 3) {
+        else if(courses[id].type == 3) {
             diffTypeCourses[2].push_back(id);
         }
-        else{
+        else if(courses[id].type == 4) {
             diffTypeCourses[3].push_back(id);
+        }
+        else{
+            diffTypeCourses[4].push_back(id);
         }
     }
 
     for (int i = 0; i < 8; i++){  // 给每个学期排课
-
-        for (int j = 0; j < 4; j++) {   // 按课程类型给每个学期排课
-            int seq = 0;  // 每学期从课程组中的第一个课程开始分配
-            diffTypeCoursesCreditTotal[j] += diffTypeCoursesCredit[j][i];  // 将预分配课程某学期的学分加到diffTypeCoursesCreditTotal（8学期）中
+        for (int j = 0; j < 5; j++) {   // 按课程类型给每个学期排课
+            size_t seq = 0;  // 每学期从课程组中的第一个课程开始分配
 
             while(seq < diffTypeCourses[j].size()) {    // 用seq遍历某课程类型的所有课程
                 string id = diffTypeCourses[j][seq];
@@ -137,24 +141,36 @@ void assignCourses(const vector<string>& sortedCourses, vector<double>creditDema
                 double avgCredit = creditDemand[j] / 8.0;
                 double maxCredit = creditDemand[j];
 
-                if (j == 0) {
-                    // 公共基础课和实践必修课集中在前 3 学期
+                if (j == 0)
+                {
                     double remainingCredit = creditDemand[j] - diffTypeCoursesCreditTotal[j];  // 减去预分配的课程学分
-                    double remainingSemesters = max(1, 3 - i);  // 安排到前3学期
-                    if (i < 3) {
+                    if (i < 3) // 公共基础课集中在前 3 学期
+                    {
+                        double remainingSemesters = max(1, 3 - i);  // 安排到前3学期
                         avgCredit = remainingCredit / remainingSemesters;
                         maxCredit = avgCredit * 1.5;  // 可调范围
-                    } else {
-                        maxCredit = avgCredit = creditDemand[j] / 8;
+                    } // 这个设置使得这三个学期已经超过了所需学分，因此不需要else继续判断了
+                }
+                else if (j == 2)
+                {
+                    // 专业选修课集中在后 4 学期（4~7）
+                    if (i < 3 || i == 7)
+                    {
+                        avgCredit = creditDemand[j] / 8 - 1; // 前三学期也开设少量选修（舍去后面加1的影响）
+                        maxCredit = avgCredit + 1;
+                    }
+                    else
+                    {
+                        avgCredit = creditDemand[j] / (8 - i);    // 设置avgCredit >= 总需求的1/4，因为想要专业选修课能够有余，学生选择丰富
+                        maxCredit = avgCredit * 2; // 使得maxCredit = avgCredit * 2
                     }
                 }
-                else if (j == 2) {
-                    // 专业选修课集中在后 4 学期（4~7）
-                    if (i < 3) {
-                        maxCredit = avgCredit = creditDemand[j] / 8; // 第三学期也开设少量选修
-                    } else {
-                        avgCredit = creditDemand[j] / 4;    // 固定设置avgCredit，因为想要专业选修课能够
-                        maxCredit = creditDemand[j];
+                else if (j == 4) // 实践选修课（按照default来的话，前2个学期由于低需求credits，没有分配，战线拉长到Semester8）
+                {
+                    if(i > 2)
+                    {
+                        avgCredit = 2;  // 放开一门课
+                        maxCredit = avgCredit * 1.5;
                     }
                 }
 
@@ -183,7 +199,6 @@ void assignCourses(const vector<string>& sortedCourses, vector<double>creditDema
                         diffTypeCoursesCreditTotal[j] += course.credit;
                         diffTypeCoursesCredit[j][i] += course.credit;  //i代表学期，j代表课程类型
                         assignedSemester.emplace(id, i);
-
                         diffTypeCourses[j].erase(diffTypeCourses[j].begin() + seq);  //该课程被安排后，删除它
                     }
 
@@ -203,43 +218,52 @@ void assignCourses(const vector<string>& sortedCourses, vector<double>creditDema
     diffTypeCoursesCreditTotal[0] += 2;
     diffTypeCoursesCredit[0][7] += 2;
 
-    string ofpath = "/Users/cynthia/projects/QtProject/TrainingPlan/semesterCourses.txt";
-    ofstream of(ofpath);
-
-    if (!of) {
-        cout << "创建输出文件失败！ \n";
+    QFile file(outPath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(parent, "错误", "创建输出文件失败！");
         return;
     }
+    QTextStream out(&file);
 
-    of << diffTypeCoursesCreditTotal[0] << endl
-       << diffTypeCoursesCreditTotal[1] << endl
-       << diffTypeCoursesCreditTotal[2] << endl
-       << diffTypeCoursesCreditTotal[3] << endl;
+    out << diffTypeCoursesCreditTotal[0] << "\n"
+       << diffTypeCoursesCreditTotal[1] << "\n"
+       << diffTypeCoursesCreditTotal[2] << "\n"
+       << diffTypeCoursesCreditTotal[3] << "\n"
+       << diffTypeCoursesCreditTotal[4] << "\n";
 
     for (int i = 0; i < 8; i++) {
-        of << "Semester" << (i + 1) << ": \n";
+        out << "Semester" << (i + 1) << ": \n";
 
-        // of << "\n 该学期共修读学分：";
         if (i < 7) {
-            of << semesterCredit[i] << endl;
+            out << semesterCredit[i] << "\n";
         }
         else {
-            of << semesterCredit[i] + 2 << endl;
+            out << semesterCredit[i] + 2 << "\n";
         }
-        of << semesterHours[i] << endl;
+        out << semesterHours[i] << "\n";
 
-        of << diffTypeCoursesCredit[0][i] << endl
-           << diffTypeCoursesCredit[1][i] << endl
-           << diffTypeCoursesCredit[2][i] << endl
-           << diffTypeCoursesCredit[3][i] << endl;
+        out << diffTypeCoursesCredit[0][i] << "\n"
+           << diffTypeCoursesCredit[1][i] << "\n"
+           << diffTypeCoursesCredit[2][i] << "\n"
+           << diffTypeCoursesCredit[3][i] << "\n"
+           << diffTypeCoursesCredit[4][i] << "\n";
 
-        of << "(C06)" << courses["C06"].name << "\n";
+        out << "(C06)1" << QString::fromStdString(courses["C06"].name) << "\n";
         for (string s : semesters[i]) {
             if(s.empty()) continue;
-            of << "("<< s  <<")"<< courses[s].name <<" \n";
+            out << "("<< QString::fromStdString(s)  <<")";
+            switch(courses[s].type)
+            {
+                case 1: out<< "1"; break;
+                case 2: out<< "2"; break;
+                case 3: out<< "3"; break;
+                case 4: out<< "4"; break;
+                case 5: out<< "5"; break;
+                default:break;
+            }
+            out << QString::fromStdString(courses[s].name) << "\n";
         }
     }
 
-
-    of.close();
+    file.close();
 }
