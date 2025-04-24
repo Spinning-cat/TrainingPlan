@@ -2,8 +2,8 @@
 数据结构大作业——培养编制计划
 
 环境： \
-macOS Sequoia 15.3.2 \
-qt 6.8.2
+**macOS Sequoia 15.3.2 \
+qt 6.8.2**
 
 ## Table of Content
   
@@ -57,6 +57,8 @@ qt 6.8.2
 semesterCourses.txt展示：
 
 ![结果文件内容展示](image/semesterCourses.jpg)
+
+<font color="red"><strong>注意：Windows上，把文本文件改成ASNI编码，qt默认编码为System</strong></font>
 
 ---
 
