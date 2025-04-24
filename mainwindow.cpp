@@ -308,8 +308,8 @@ void MainWindow::loadResultTxtIntoTable(const QString& filename)
 
 void MainWindow::getTrainingPlan()
 {
-    loadCourses(getFilename().toStdString());
-    vector<string> top_courses = TopologicalSort((static_cast<QWidget*>(this)));
+    loadCourses(getFilename(), static_cast<QWidget*>(this));
+    vector<string> top_courses = TopologicalSort(static_cast<QWidget*>(this));
 
     // 获取5类课程需求学分
     vector<double>creditDemand(5, 0);

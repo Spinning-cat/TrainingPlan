@@ -8,7 +8,7 @@
 #include "Course.h"
 using namespace std;
 
-void loadCourses(const string& filename);
+void loadCourses(const QString& filename, QWidget* parent = nullptr);
 vector<string> TopologicalSort(QWidget* parent = nullptr);
 void assignCourses(const vector<string>& sortedCourses, vector<double> creditDemand, const QString& outPath, QWidget* parent = nullptr);
 

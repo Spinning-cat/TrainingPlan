@@ -9,22 +9,29 @@
 unordered_map<string, vector<string>> graph;    // 课程依赖图
 unordered_map<string, int> indegree;           // 入度表
 unordered_map<string, Course> courses;         // 课程信息
-void loadCourses(const string& filename) {
+void loadCourses(const QString& filename, QWidget* parent) {
     graph.clear();
     indegree.clear();
     courses.clear();
-    ifstream file(filename);
-    if (!file) {
-        cout << "文件无法打开！" << endl;
-        exit(EXIT_FAILURE);
+    QFile file(filename);
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::critical(parent, "错误", "打开输入文件失败！");
+        return;
     }
-    string line;
-    while (getline(file, line)) {
+
+    QTextStream in(&file);
+
+    while (!in.atEnd()) {
+        QString qline = in.readLine();  // UTF-8 自动解码
+        string line = qline.toStdString();  // 便于用 stringstream 解析
+
         stringstream ss(line);
         Course course;
         string prereq;
 
         ss >> course.id >> course.name >> course.credit >> course.hours >> course.type;
+
         while (ss >> prereq) {
             course.prerequisites.push_back(prereq);
             graph[prereq].push_back(course.id);
@@ -32,10 +39,12 @@ void loadCourses(const string& filename) {
         }
 
         courses[course.id] = course;
+
         if (indegree.find(course.id) == indegree.end()) {
             indegree[course.id] = 0;
         }
     }
+
     file.close();
 }
 
