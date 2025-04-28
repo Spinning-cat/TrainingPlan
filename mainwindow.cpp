@@ -421,13 +421,24 @@ void MainWindow::on_searchCourse_clicked()
         return;
     }
 
-    // 有keyword后，遍历coursesTable匹配字符串
     ui->coursesTable->clearSelection(); // 清除之前的选中状态
 
     bool found = false;
     int row = ui->coursesTable->rowCount();
     int col = ui->coursesTable->columnCount();
 
+    // 清除原先选中的单元格背景色
+    for(int i=0;i<row;i++)
+    {
+        for(int j = 0;j<col;j++)
+        {
+            QTableWidgetItem* item = ui->coursesTable->item(i, j);
+            if(item)
+                item->setBackground(Qt::NoBrush);
+        }
+    }
+
+    // 有keyword后，遍历coursesTable匹配字符串
     for(int i = 0; i < row; i++)
     {
         for(int j = 0; j < col; j++)
@@ -436,8 +447,11 @@ void MainWindow::on_searchCourse_clicked()
             // 当item非空 并且其中文字包含关键词
             if(item && item->text().contains(keyword))
             {
+                for(int k = 0; k < col; ++k)
+                {
+                    ui->coursesTable->item(i, k)->setBackground(Qt::yellow);
+                }
                 item->setSelected(true);
-                item->setBackground(Qt::yellow);
                 ui->coursesTable->scrollToItem(item, QAbstractItemView::PositionAtCenter);
                 found = true;
             }
