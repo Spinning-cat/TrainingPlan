@@ -1,7 +1,7 @@
 #include "avgassign.h"
 #include "Course.h"
 #include <iostream>
-#include <fstream>
+#include <QTextStream>
 #include <sstream>
 #include <queue>
 #include <QMessageBox>

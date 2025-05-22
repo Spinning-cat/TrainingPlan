@@ -16,6 +16,9 @@
   <property name="layoutDirection">
    <enum>Qt::LayoutDirection::LeftToRight</enum>
   </property>
+  <property name="styleSheet">
+   <string notr="true">color:black;</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_5">
     <item row="0" column="1">
@@ -367,8 +370,11 @@
           <kerning>true</kerning>
          </font>
         </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
         <property name="sizeAdjustPolicy">
-         <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustIgnored</enum>
+         <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>
         </property>
         <attribute name="horizontalHeaderCascadingSectionResizes">
          <bool>false</bool>
@@ -391,6 +397,12 @@
           <family>Heiti SC</family>
           <pointsize>14</pointsize>
          </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">gridline-color: white;</string>
+        </property>
+        <property name="sizeAdjustPolicy">
+         <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>
         </property>
         <property name="alternatingRowColors">
          <bool>true</bool>

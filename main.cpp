@@ -69,19 +69,24 @@ int main(int argc, char *argv[])
     MainWindow w;
 
     // 给两个路径属性赋值
-    w.setFilename(inputPath);
-    w.setFilepath(outputPath);
+    w.setInputPath(inputPath);
+    w.setOutputPath(outputPath);
 
     // 设置全局字体大小
     QFont font;
     font.setPointSize(16);  // 统一设置字体大小
     a.setFont(font);
 
+    // 设置全局字体颜色
+    QPalette palette;
+    palette.setColor(QPalette::WindowText, Qt::black);  // 设置字体颜色为黑色
+    a.setPalette(palette);
+
     // 背景色设置
     w.setStyleSheet(
-        "QWidget { background-color: rgba(173, 216, 230, 150); font-size: 15pt}"  // 窗口背景色--浅蓝
-        "QTableWidget,QDoubleSpinBox ,QLineEdit {background-color: white; }"
-        "QPushButton { background-color: #E3E7C0; border: 0.3pt solid red; padding: 0.5pt;}" // 按钮背景色
+        "QWidget { background-color: rgba(173, 216, 230, 150); font-size: 15pt; color: black;}"  // 窗口背景色--浅蓝
+        "QTableWidget,QDoubleSpinBox ,QLineEdit {background-color: white; gridline-color: white; color: black;}"
+        "QPushButton { background-color: #E3E7C0; border: 0.3pt solid red; padding: 0.5pt; color: black;}" // 按钮背景色
         );
 
     // 标题

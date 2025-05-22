@@ -46,15 +46,15 @@ MainWindow::MainWindow(QWidget *parent)
     ui->credit5->setReadOnly(true);
 
     // 表格大小自适应内容
-    ui->coursesTable->resizeColumnsToContents();
-    ui->coursesTable->resizeRowsToContents();
     ui->coursesTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->coursesTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ui->coursesTable->resizeColumnsToContents();
+    ui->coursesTable->resizeRowsToContents();
 
-    ui->resultTable->resizeColumnsToContents();
-    ui->resultTable->resizeRowsToContents();
     ui->resultTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->resultTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ui->resultTable->resizeColumnsToContents();
+    ui->resultTable->resizeRowsToContents();
 
     // 设置表格颜色交替显示
     ui->coursesTable->setAlternatingRowColors(true);
@@ -66,51 +66,36 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-// 在coursesTable末尾添加行
-void MainWindow::appendOneRow(QString CID, QString Cname, double credit, int hours, int category, QString prereq)
+// 1.1 设置输入文件路径
+void MainWindow::setInputPath(const QString& filename) { this->inputPath = filename; }
+// 1.2 设置输出文件路径
+void MainWindow::setOutputPath(const QString& filepath) { this->outputPath = filepath; }
+// 1.3 获取输入文件路径
+QString MainWindow::getInputPath()
 {
-    int count = ui->coursesTable->rowCount();
-    ui->coursesTable->setRowCount(count + 1);
-    QString category_str = "";
-    switch (category) {
-    case 1: category_str = "公共基础课"; break;
-    case 2: category_str = "专业基础课"; break;
-    case 3: category_str = "专业选修课"; break;
-    case 4: category_str = "实践必修课"; break;
-    case 5: category_str = "实践选修课"; break;
-    default:
-        break;
-    }
-
-    QTableWidgetItem *idItem = new QTableWidgetItem(CID);
-    QTableWidgetItem *nameItem = new QTableWidgetItem(Cname);
-    QTableWidgetItem *creditItem = new QTableWidgetItem(QString::number(credit, 'f', 1));
-    QTableWidgetItem *hoursItem = new QTableWidgetItem(QString::number(hours));
-    QTableWidgetItem *categoryItem = new QTableWidgetItem(category_str);
-    QTableWidgetItem *prereqItem = new QTableWidgetItem(prereq);
-
-    ui->coursesTable->setItem(count, 0, idItem);
-    ui->coursesTable->setItem(count, 1, nameItem);
-    ui->coursesTable->setItem(count, 2, creditItem);
-    ui->coursesTable->setItem(count, 3, hoursItem);
-    ui->coursesTable->setItem(count, 4, categoryItem);
-    ui->coursesTable->setItem(count, 5, prereqItem);
-
-    //  单元格文字居中
-    for(int i = 0; i < 5; i++){
-        if(i == 1) continue;
-        QTableWidgetItem* item = ui->coursesTable->item(count, i);
-        item->setTextAlignment(Qt::AlignCenter);
-    }
+    return inputPath;
+}
+// 1.4 获取输出文件路径
+QString MainWindow::getOutputPath()
+{
+    return outputPath;
 }
 
-// 读取txt文件并显示在表格上
+// 2.1 显示课程
+void MainWindow::on_showCourses_clicked()
+{
+    if (ui->coursesTable->rowCount() > 0) {
+        ui->coursesTable->setRowCount(0);  // 清空表格内容
+    }
+    loadtxtIntoTable(getInputPath());
+}
+
+// 2.2 读取txt文件并显示在表格上
 void MainWindow::loadtxtIntoTable(const QString& filename)
 {
     QFile file(filename);
     if(!file.open(QIODevice::ReadOnly))
     {
-        qDebug() << "课程文件路径：" << filename;
         QMessageBox::warning(nullptr, "错误", "无法打开课程文件");
         return;
     }
@@ -149,7 +134,69 @@ void MainWindow::loadtxtIntoTable(const QString& filename)
     }
 }
 
-// 将结果txt输出在表格上
+// 2.3 在coursesTable末尾添加行
+void MainWindow::appendOneRow(QString CID, QString Cname, double credit, int hours, int category, QString prereq)
+{
+    int count = ui->coursesTable->rowCount();
+    ui->coursesTable->setRowCount(count + 1);
+    QString category_str = "";
+    switch (category) {
+    case 1: category_str = "公共基础课"; break;
+    case 2: category_str = "专业基础课"; break;
+    case 3: category_str = "专业选修课"; break;
+    case 4: category_str = "实践必修课"; break;
+    case 5: category_str = "实践选修课"; break;
+    default:
+        break;
+    }
+
+    QTableWidgetItem *idItem = new QTableWidgetItem(CID);
+    QTableWidgetItem *nameItem = new QTableWidgetItem(Cname);
+    QTableWidgetItem *creditItem = new QTableWidgetItem(QString::number(credit, 'f', 1));
+    QTableWidgetItem *hoursItem = new QTableWidgetItem(QString::number(hours));
+    QTableWidgetItem *categoryItem = new QTableWidgetItem(category_str);
+    QTableWidgetItem *prereqItem = new QTableWidgetItem(prereq);
+
+    ui->coursesTable->setItem(count, 0, idItem);
+    ui->coursesTable->setItem(count, 1, nameItem);
+    ui->coursesTable->setItem(count, 2, creditItem);
+    ui->coursesTable->setItem(count, 3, hoursItem);
+    ui->coursesTable->setItem(count, 4, categoryItem);
+    ui->coursesTable->setItem(count, 5, prereqItem);
+    ui->coursesTable->resizeColumnToContents(5);
+
+    //  单元格文字居中
+    for(int i = 0; i < 5; i++){
+        if(i == 1) continue;
+        QTableWidgetItem* item = ui->coursesTable->item(count, i);
+        item->setTextAlignment(Qt::AlignCenter);
+    }
+}
+
+// 3.1 生成培养计划编制
+void MainWindow::on_getTrainingPlan_clicked()
+{
+    getTrainingPlan();
+}
+
+// 3.2 生成培养编制计划
+void MainWindow::getTrainingPlan()
+{
+    loadCourses(getInputPath(), static_cast<QWidget*>(this));
+    vector<string> top_courses = TopologicalSort(static_cast<QWidget*>(this));
+
+    // 获取5类课程需求学分
+    vector<double>creditDemand(5, 0);
+    creditDemand[0] = stod(ui->needCredit1->text().toStdString());
+    creditDemand[1] = stod(ui->needCredit2->text().toStdString());
+    creditDemand[2] = stod(ui->needCredit3->text().toStdString());
+    creditDemand[3] = stod(ui->needCredit4->text().toStdString());
+    creditDemand[4] = stod(ui->needCredit5->text().toStdString());
+    assignCourses(top_courses, creditDemand, this->outputPath);
+    loadResultTxtIntoTable(getOutputPath());
+}
+
+// 3.3 将结果txt输出在表格上
 void MainWindow::loadResultTxtIntoTable(const QString& filename)
 {
     ui->resultTable->clearContents(); // 清空表格内容，刷新表格
@@ -231,7 +278,7 @@ void MainWindow::loadResultTxtIntoTable(const QString& filename)
     int columnCount = semesterNames.size();
     ui->resultTable->setRowCount(totalRows);
     ui->resultTable->setColumnCount(columnCount);
-    ui->resultTable->setHorizontalHeaderLabels(semesterNames);
+    ui->resultTable->setHorizontalHeaderLabels(QStringList(semesterNames.begin(), semesterNames.end()));
 
     for (int i = 0; i < maxCourses; i++) {
         ui->resultTable->setItem(baseRows + i , 0, new QTableWidgetItem("课程" + QString::number(i)));
@@ -306,112 +353,7 @@ void MainWindow::loadResultTxtIntoTable(const QString& filename)
     }
 }
 
-void MainWindow::getTrainingPlan()
-{
-    loadCourses(getFilename(), static_cast<QWidget*>(this));
-    vector<string> top_courses = TopologicalSort(static_cast<QWidget*>(this));
-
-    // 获取5类课程需求学分
-    vector<double>creditDemand(5, 0);
-    creditDemand[0] = stod(ui->needCredit1->text().toStdString());
-    creditDemand[1] = stod(ui->needCredit2->text().toStdString());
-    creditDemand[2] = stod(ui->needCredit3->text().toStdString());
-    creditDemand[3] = stod(ui->needCredit4->text().toStdString());
-    creditDemand[4] = stod(ui->needCredit5->text().toStdString());
-    assignCourses(top_courses, creditDemand, this->filepath);
-    loadResultTxtIntoTable(getFilepath());
-}
-
-string join(const vector<string>& vec, const string& delimiter) // 将vector<string>转为用delimiter分隔的string
-{
-    string result;
-    for (size_t i = 0; i < vec.size(); ++i) {
-        if (i > 0) result += delimiter;
-        result += vec[i];
-    }
-    return result;
-}
-
-// 在course.txt中更新课程记录
-void MainWindow::updateCourseInFile(const vector<Course>& updatedCourses)
-{
-    // 打开courses.txt并更新课程记录
-    QFile file(getFilename());
-    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        QMessageBox::warning(this, "错误", "无法打开文件");
-        return;
-    }
-
-    QTextStream in(&file);
-    QVector<QString> fileLines;
-    while(!in.atEnd()) // 读取文件所有行，并存储到fileLines中
-    {
-        fileLines.append(in.readLine());
-    }
-    file.close();
-    QMap<QString, QString> courseMap;
-    for (auto& course : updatedCourses) {
-        if(course.id.empty()) continue;
-        courseMap[QString::fromStdString(course.id)] = QString("%1    %2    %3    %4    %5    %6")
-        .arg(QString::fromStdString(course.id))
-            .arg(QString::fromStdString(course.name))
-            .arg(course.credit)
-            .arg(course.hours)
-            .arg(course.type)
-            .arg(QString::fromStdString(join(course.prerequisites, " ")));
-    }
-
-    // update fileLines
-    for (int i = 0; i < fileLines.size(); i++) {
-        // 按照多个空格或者tab分隔
-        QStringList fields = fileLines[i].split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
-        if (fields.size() > 0 && courseMap.contains(fields[0])) {
-            fileLines[i] = courseMap[fields[0]];
-        }
-    }
-
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
-        QMessageBox::warning(this, "错误", "无法打开 courses.txt 进行写入！");
-        return;
-    }
-
-    QTextStream out(&file);
-    for (const QString &line : fileLines) {
-        out << line << "\n";
-    }
-
-    file.close();
-    QMessageBox::information(this, "成功", "课程信息已更新！");
-    ui->confirmButton->setEnabled(false);
-}
-
-QString MainWindow::getFilename()
-{
-    return filename;
-}
-
-QString MainWindow::getFilepath()
-{
-    return filepath;
-}
-
-void MainWindow::setFilename(const QString& filename) {this->filename = filename;}
-void MainWindow::setFilepath(const QString& filepath) {this->filepath = filepath;}
-
-
-// 判断cid是否出现过
-bool MainWindow::isCIDexists(QString cid)
-{
-    return courseIDs.contains(cid);
-}
-
-void MainWindow::on_getTrainingPlan_clicked()
-{
-    getTrainingPlan();
-}
-
-// 查找按钮，对被查找到的课程高亮并传送到具体位置
+// 4.1 查找按钮，对被查找到的课程高亮并传送到具体位置
 void MainWindow::on_searchCourse_clicked()
 {
     QString keyword = ui->keyword->text();
@@ -462,7 +404,7 @@ void MainWindow::on_searchCourse_clicked()
     }
 }
 
-// 添加课程，只能在后面添加
+// 5.1 添加课程，只能在后面添加
 void MainWindow::on_addCourse_clicked()
 {
     QString CID = QInputDialog::getText(this, "添加课程", "课程id（格式\"Cxxx\"）");
@@ -484,7 +426,7 @@ void MainWindow::on_addCourse_clicked()
 
     appendOneRow(CID, Cname, credit, hours, category, prereq);
 
-    QFile file(getFilename());
+    QFile file(getInputPath());
     if(file.open(QIODevice::Append | QIODevice::Text))
     {
         QTextStream os(&file);
@@ -494,7 +436,13 @@ void MainWindow::on_addCourse_clicked()
     QMessageBox::information(this, "成功", "课程已添加！");
 }
 
-// 修改课程属性，允许一次性修改多行记录
+// 5.2 辅助函数：在新增课程时判断cid是否出现过
+bool MainWindow::isCIDexists(QString cid)
+{
+    return courseIDs.contains(cid);
+}
+
+// 6.1 修改课程属性，允许一次性修改多行记录
 void MainWindow::on_editCourse_clicked()
 {
     // 点击了编辑按钮后方可编辑
@@ -509,7 +457,7 @@ void MainWindow::on_editCourse_clicked()
     }
 }
 
-// 确认修改后调用updateCourseInFile对txt进行更新
+// 6.2 确认修改后调用updateCourseInFile对txt进行更新
 void MainWindow::on_confirmButton_clicked()
 {
     vector<Course> updatedCourses;
@@ -557,7 +505,72 @@ void MainWindow::on_confirmButton_clicked()
     ui->coursesTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
 }
 
-// 删除课程
+// 6.3 辅助函数：将vector<string>转为用delimiter分隔的string
+string join(const vector<string>& vec, const string& delimiter)
+{
+    string result;
+    for (size_t i = 0; i < vec.size(); ++i) {
+        if (i > 0) result += delimiter;
+        result += vec[i];
+    }
+    return result;
+}
+
+// 6.4 在course.txt中更新课程记录
+void MainWindow::updateCourseInFile(const vector<Course>& updatedCourses)
+{
+    // 打开courses.txt并更新课程记录
+    QFile file(getInputPath());
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QMessageBox::warning(this, "错误", "无法打开文件");
+        return;
+    }
+
+    QTextStream in(&file);
+    QVector<QString> fileLines;
+    while(!in.atEnd()) // 读取文件所有行，并存储到fileLines中
+    {
+        fileLines.append(in.readLine());
+    }
+    file.close();
+    QMap<QString, QString> courseMap;
+    for (auto& course : updatedCourses) {
+        if(course.id.empty()) continue;
+        courseMap[QString::fromStdString(course.id)] = QString("%1    %2    %3    %4    %5    %6")
+                                                           .arg(QString::fromStdString(course.id))
+                                                           .arg(QString::fromStdString(course.name))
+                                                           .arg(course.credit)
+                                                           .arg(course.hours)
+                                                           .arg(course.type)
+                                                           .arg(QString::fromStdString(join(course.prerequisites, " ")));
+    }
+
+    // update fileLines
+    for (int i = 0; i < fileLines.size(); i++) {
+        // 按照多个空格或者tab分隔
+        QStringList fields = fileLines[i].split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+        if (fields.size() > 0 && courseMap.contains(fields[0])) {
+            fileLines[i] = courseMap[fields[0]];
+        }
+    }
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+        QMessageBox::warning(this, "错误", "无法打开 courses.txt 进行写入！");
+        return;
+    }
+
+    QTextStream out(&file);
+    for (const QString &line : fileLines) {
+        out << line << "\n";
+    }
+
+    file.close();
+    QMessageBox::information(this, "成功", "课程信息已更新！");
+    ui->confirmButton->setEnabled(false);
+}
+
+// 7.1 删除课程
 void MainWindow::on_deleteCourse_clicked()
 {
     int row = ui->coursesTable->currentRow();
@@ -591,10 +604,10 @@ void MainWindow::on_deleteCourse_clicked()
     updateCourseFile(courseId);
 }
 
-// 删除后对txt更新
+// 7.2 删除后对txt更新
 void MainWindow::updateCourseFile(const QString &courseId)
 {
-    QFile file(getFilename());
+    QFile file(getInputPath());
 
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -629,11 +642,5 @@ void MainWindow::updateCourseFile(const QString &courseId)
     }
     file.close();
     QMessageBox::information(this, "成功", "删除课程成功");
-}
-
-
-void MainWindow::on_showCourses_clicked()
-{
-    loadtxtIntoTable(getFilename());
 }
 
